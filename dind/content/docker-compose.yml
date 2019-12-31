@@ -1,0 +1,46 @@
+version: "3"
+services:
+    routing:
+        image: 172.17.0.1:5000/babeld #dm4tze/babeld/dev
+        privileged: true
+        network_mode: "host"
+        container_name: babeld
+        restart: unless-stopped
+
+    dfclient:
+        image: 172.17.0.1:5000/dfclient
+        restart: unless-stopped
+        privileged: true
+        network_mode: "host"
+        container_name: dfclient
+        ports:
+            - 65001:65001
+        volumes:
+          - /etc/dragonfly:/etc/dragonfly
+          - $HOME/.small-dragonfly:/root/.small-dragonfly
+        command: --registry https://index.docker.io
+
+    supernode:
+        image: 172.17.0.1:5000/supernode
+        network_mode: "host"
+        privileged: true
+        container_name: supernode
+        ports:
+            - 8001:8001 #download Port
+            - 8002:8002
+        volumes:
+            - /home/admin/supernode:/home/admin/supernode
+        restart: unless-stopped
+        command: --download-port=8001
+
+    backend:
+        image: 172.17.0.1:5000/registry
+        container_name: registry
+        privileged: true
+        network_mode: "host"
+        restart: unless-stopped
+        ports:
+            - 5001:5000
+
+volumes:
+    dbdata:

@@ -1,0 +1,10 @@
+base:
+  advertiseIP: 44.0.0.13
+
+  peerUpLimit: 1000
+
+  peerDownLimit: 1000
+
+  eliminationLimit: 1000
+
+  failureCountLimit: 1000
