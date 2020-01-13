@@ -144,6 +144,7 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
         #time.sleep(240)
         for node in set.seeder:
             subprocess.call(['docker exec mn.%s docker pull %s' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(['docker exec -it mn.%s sh -c "iptables -Z"' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
         #start download
         sum = 0
