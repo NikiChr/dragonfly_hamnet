@@ -1,2 +1,5 @@
 measurements/
 interfaces/
+dfget.yml
+dfdaemon.yml
+supernode.yml

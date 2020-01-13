@@ -11,9 +11,10 @@ import subprocess
 import time
 import os
 import settings as set
+import check
 
 FNULL = open(os.devnull, 'w')
-set.readNodes()
+#set.readNodes()
 
 def checkDragonflyContainer():
     sum = 0
@@ -52,132 +53,167 @@ def checkDragonflyContainer():
     else:
         print ('\nDfclient(s) running\n')
 
-def downloadImage(image, iterations, outage = False, oNr = 0, oTime = 0):
-    FNULL = open(os.devnull, 'w')
-    iStart = datetime.now()
-    print iStart
+def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
+
+    doc = open('./measurements/%s/%s/results/setup.txt' % (currentInstance, currentTest), 'w+')
+    doc.write('Server:%s\nHosts:%s\nSeeders:%s\nImage:%s\nServer outage:%s\nOutage number:%s\nOutage start:%s' % (str(len(set.servers)), str(len(set.name)), str(len(set.seeder)), image, outage, oNr, oTime))
+    doc.close()
+
     image = image.strip()
+    for node in set.name:
+        subprocess.call(['docker exec mn.%s sh -c "rm -rf times/*"' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        subprocess.call(['docker exec mn.%s sh -c "mkdir times/"' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-    for iteration in range(int(iterations)):
-        print ('\n###\nTest #%s\n###' % (iteration + 1))
+    for i in range(int(iteration)):
+        print ('\n###\nTest #%s\n###' % (i + 1))
+        print datetime.now()
+        image = image.strip()
 
-        checkDragonflyContainer()
-        subprocess.call(['mkdir measurements/%s/%s/%s/' % (currentInstance,currentTest,(iteration + 1))],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-        subprocess.call(['mkdir measurements/%s/%s/%s/time/' % (currentInstance,currentTest,(iteration + 1))],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-        subprocess.call(['mkdir measurements/%s/%s/%s/traffic/' % (currentInstance,currentTest,(iteration + 1))],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        #prepare downloads
+        subprocess.call(['mkdir measurements/%s/%s/%s/' % (currentInstance,currentTest,i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        subprocess.call(['mkdir measurements/%s/%s/%s/time/' % (currentInstance,currentTest,i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        subprocess.call(['mkdir measurements/%s/%s/%s/traffic/' % (currentInstance,currentTest,i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-
-
-
-        #delete existing image and log files on hosts
-        sum = 0
+        ##########################
+        #deleting and Restarting
         deleted = [False] * len(set.name)
-        bar1 = IncrementalBar('Deleting existing log files ', max = len(set.name))
-        subprocess.call(['rm -fR time/*'],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
+        restarted = [False] * len(set.name)
+        sum = 0
+        print 'Deleting images and restarting container'
+        bar_restart = IncrementalBar('Finished cleanup(s)', max = len(set.name))
         for node in set.name:
-            #if not node in set.servers:
             subprocess.call(['docker exec -it mn.%s docker image rm -f %s' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            if node in set.servers:
+                subprocess.call(['docker exec -it mn.%s sh -c "(docker stop dfclient supernode && docker rm dfclient supernode)"&' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            else:
+                subprocess.call(['docker exec -it mn.%s sh -c "(docker stop dfclient && docker rm dfclient)"&' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(['docker exec -it mn.%s sh -c "iptables -Z"' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(["docker exec mn.%s sh -c 'rm -f root/.small-dragonfly/logs/dfdaemon.log'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
             subprocess.call(["docker exec mn.%s sh -c 'rm -f root/.small-dragonfly/logs/dfclient.log'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
             subprocess.call(["docker exec mn.%s sh -c 'rm -f root/.small-dragonfly/logs/dfserver.log'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
             subprocess.call(["docker exec mn.%s sh -c 'rm -rf root/.small-dragonfly/data/*'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
             subprocess.call(["docker exec mn.%s sh -c 'rm -rf root/.small-dragonfly/meta/*'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
-            subprocess.call(["docker exec mn.%s sh -c 'iptables -Z'" % node ],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            bar1.next()
-        bar1.finish()
-        print ('%s deleted on every host\n' % image)
-        '''
-        bar1 = IncrementalBar('Deleting existing images', max = len(set.name))
-        while sum < len(set.name) - len(set.seeder):
+            subprocess.call(["docker exec mn.%s sh -c 'rm -rf root/.small-dragonfly/dfdaemon/data/*'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True) #root/.small-dragonfly/logs/*
+
+        while sum < len(set.name):
             for node in set.name:
-                if deleted[set.name.index(node)] == False:
-                    if not image in subprocess.check_output(['docker exec mn.' + node + ' docker image ls'],shell=True):
-                        sum = sum + 1
-                        deleted[set.name.index(node)] = True
-                        bar1.next()
-                            #print ('\n' + node)
-        print ('\n' + image + ' deleted on every host\n')
-        time.sleep(1)
-        bar1.finish()
-        '''
+                if 'localhost:16000/%s' % image in subprocess.check_output(['docker exec mn.%s docker image ls' % node],shell=True):
+                    subprocess.call(['docker exec mn.%s docker image rm -f %s' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+                if deleted[set.name.index(node)] == False: #delete
+                    if node in set.servers:
+                        if not ('dfclient' and 'supernode') in subprocess.check_output(['docker exec mn.%s docker ps' % node],shell=True):
+                            deleted[set.name.index(node)] = True
+                        else:
+                            if not ('docker rm' or 'docker stop') in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
+                                subprocess.call(['docker exec mn.%s sh -c "(docker stop dfclient supernode && docker rm dfclient supernode )"&' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+                    else:
+                        if not 'dfclient' in subprocess.check_output(['docker exec mn.%s docker ps' % node],shell=True):
+                            deleted[set.name.index(node)] = True
+                        else:
+                            if not ('docker rm' or 'docker stop') in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
+                                subprocess.call(['docker exec mn.%s sh -c "(docker stop dfclient && docker rm dfclient)"&' % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+                else:
+                    if restarted[set.name.index(node)] == False:
+                        if node in set.servers:
+                            if ('dfclient' and 'supernode') in subprocess.check_output(['docker exec mn.%s docker ps' % node],shell=True):
+                                sum = sum + 1
+                                restarted[set.name.index(node)] = True
+                                bar_restart.next()
+                            else:
+                                if not ('compose') in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
+                                    subprocess.call(['docker exec mn.%s sh -c "(export IP=%s && docker-compose -f stack_server.yml up -d)"&' % (node, set.ip[set.name.index(node)])],stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+                                    #print node
+                        else:
+                            if 'dfclient' in subprocess.check_output(['docker exec mn.%s docker ps' % node],shell=True):
+                                sum = sum + 1
+                                restarted[set.name.index(node)] = True
+                                bar_restart.next()
+                            else:
+                                if not ('compose') in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
+                                    subprocess.call(['docker exec mn.%s sh -c "(export IP=%s && docker-compose -f stack_client.yml up -d)"&' % (node, set.ip[set.name.index(node)])],stdout=FNULL, stderr=subprocess.STDOUT, shell=True)
+            time.sleep(5)
+        print ''
+        check.check()
+        while check.repeat == True:
+            check.check()
+        #time.sleep(60)
+        bar_restart.finish()
 
-        #Prepare seeder
-        sum = 0
-        seederPrep = [False] * len(set.seeder)
-        bar2 = IncrementalBar('Prepare seeder(s)', max = len(set.seeder))
+        #prepare seeder
+        print ('Preparing seeder(s)')
+        #time.sleep(240)
         for node in set.seeder:
-            subprocess.call(['docker exec mn.%s docker pull %s &' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-        while sum < len(set.seeder):
-            for node in set.seeder:
-                if seederPrep[set.seeder.index(node)] == False:
-                    if image in subprocess.check_output(['docker exec mn.%s docker image ls' % node],shell=True):
-                        sum = sum + 1
-                        bar2.next()
-            time.sleep(1)
-        bar2.finish()
+            subprocess.call(['docker exec mn.%s docker pull %s' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-        #Start download
+        #start download
         sum = 0
         complete = [False] * len(set.name)
-        bar3 = IncrementalBar('Waiting for download(s)', max = len(set.name))
+        print ('Starting download(s)')
+        iStart = datetime.now()
+        print iStart
+        bar_download = IncrementalBar('Waiting for download(s)', max = len(set.name))
         for node in set.name:
             if not node in set.seeder:
-                subprocess.call(['docker exec mn.%s docker pull %s &' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            if node in set.seeder:
+                #time.sleep(0.1)
+                subprocess.call(['docker exec mn.%s sh -c "(date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_start.txt && docker pull %s && date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_end.txt)"&' % (node, node, i, image, node, i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            else:
                 complete[set.name.index(node)] = True
-                bar3.next()
+                bar_download.next()
                 sum = sum + 1
+                iPrev = datetime.now()
 
         #Server outage
         if outage == True:
             print ('\nWaiting %s seconds for outage...' % oTime)
             time.sleep(int(oTime))
-            for i in range(int(oNr)):
-                print set.servers[i]
-                subprocess.call(['docker exec mn.%s docker stop supernode &' % (set.servers[i])],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            for j in range(1,int(oNr)+1):
+                print set.servers[j]
+                subprocess.call(['docker exec mn.%s docker stop supernode &' % (set.servers[-j])],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
+
+        #check download
         while sum < len(set.name):
-            #time.sleep(5)
             for node in set.name:
                 if complete[set.name.index(node)] == False:
                     if image in subprocess.check_output(['docker exec mn.%s docker image ls' % node],shell=True):
+                        print ('Docker pull successful for mn.%s' % node)
                         sum = sum + 1
                         complete[set.name.index(node)] = True
-                        bar3.next()
-                        print node
-                        subprocess.call(['docker cp mn.%s:root/.small-dragonfly/logs/dfclient.log measurements/%s/%s/%s/time/%s.txt' % (node, currentInstance, currentTest, (iteration + 1), node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+                        bar_download.next()
                     else:
-                        if sum/len(set.name) >= 0.9:
-                            subprocess.call(['docker exec mn.%s docker pull %s &' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            time.sleep(5)
-        bar3.finish()
-        print '\nDownload(s) successful'
+                        if not image in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
+                            subprocess.call(['docker exec mn.%s sh -c "(docker pull %s && date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_end.txt)"&' % (node, image, node, i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+                            print ('Docker pull restarted for mn.%s' % node)
+            time.sleep(1)
+        bar_download.finish()
+        print 'Download(s) successful'
+
+        print 'Grabbing data after download(s)'
         for node in set.name:
+            subprocess.call(['docker cp mn.%s:times/%s_%s_start.txt measurements/%s/%s/%s/time/%s_start.txt' % (node, node, i, currentInstance, currentTest, i, node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(['docker cp mn.%s:times/%s_%s_end.txt measurements/%s/%s/%s/time/%s_end.txt' % (node, node, i, currentInstance, currentTest, i, node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
             subprocess.call(["docker exec mn.%s sh -c 'iptables -L INPUT -n -v -x > tmp_IN.txt'" % node ],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            subprocess.call(['docker cp mn.%s:tmp_IN.txt measurements/%s/%s/%s/traffic/%s_IN.txt' % (node, currentInstance, currentTest, (iteration + 1), node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(['docker cp mn.%s:tmp_IN.txt measurements/%s/%s/%s/traffic/%s_IN.txt' % (node, currentInstance, currentTest, i, node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
             subprocess.call(["docker exec mn.%s sh -c 'iptables -L OUTPUT -n -v -x > tmp_OUT.txt'" % node ],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            subprocess.call(['docker cp mn.%s:tmp_OUT.txt measurements/%s/%s/%s/traffic/%s_OUT.txt' % (node, currentInstance, currentTest, (iteration + 1), node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            subprocess.call(["docker exec mn.%s sh -c 'iptables -L FORWARD -n -v -x > tmp_OUT.txt'" % node ],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-            subprocess.call(['docker cp mn.%s:tmp_OUT.txt measurements/%s/%s/%s/traffic/%s_FOR.txt' % (node, currentInstance, currentTest, (iteration + 1), node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+            subprocess.call(['docker cp mn.%s:tmp_OUT.txt measurements/%s/%s/%s/traffic/%s_OUT.txt' % (node, currentInstance, currentTest, i, node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-        if outage == True:
-            time.sleep(int(oTime))
-            for i in range(int(oNr)):
-                subprocess.call(['docker exec mn.%s docker start supernode' % (set.servers[i])],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-
-    set.measureTime(image, False, currentInstance, currentTest, iterations)
-    set.measureTraffic(image, False, currentInstance, currentTest, iterations)
+    set.measureTime(False, currentInstance, currentTest, iteration)
+    set.measureTraffic(False, currentInstance, currentTest, iteration)
 
 with open('measurements/currentInstance.txt','r+') as current:
         lines = current.readlines()
         currentInstance = str(lines[-1])
 
+set.readNodes()
 currentTest = datetime.strftime(datetime.now(),'%Y%m%d%H%M')
 subprocess.call(['mkdir measurements/%s/%s/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 subprocess.call(['mkdir measurements/%s/%s/results/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-#subprocess.call(['mkdir measurements/%s/%s/results/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-subprocess.call(['mkdir measurements/%s/%s/0/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-subprocess.call(['mkdir measurements/%s/%s/0/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-subprocess.call(['mkdir measurements/%s/%s/torrents/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# subprocess.call(['mkdir measurements/%s/%s/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# subprocess.call(['mkdir measurements/%s/%s/results/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# #subprocess.call(['mkdir measurements/%s/%s/results/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# subprocess.call(['mkdir measurements/%s/%s/0/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# subprocess.call(['mkdir measurements/%s/%s/0/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+# subprocess.call(['mkdir measurements/%s/%s/torrents/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
 testImage = raw_input("Please enter image: ")
 serverOutage = set.chooseBoolean()

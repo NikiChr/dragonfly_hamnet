@@ -18,6 +18,7 @@ services:
         volumes:
           - /etc/dragonfly:/etc/dragonfly
           - $HOME/.small-dragonfly:/root/.small-dragonfly
+          - /etc/dragonfly/dfdaemon.yml:/etc/dragonfly/dfdaemon.yml
         command: --registry https://index.docker.io
 volumes:
     dbdata:

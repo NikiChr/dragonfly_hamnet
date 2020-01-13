@@ -3,19 +3,23 @@ import subprocess
 import os
 #import downloadFiles as dF
 
-edgelist = './hamnetgraph'
-if edgelist == './hamnet201_renamed':
+edgelist = './hamnet100_renamed'
+#edgelist = './hamnetgraph'
+if edgelist == './hamnetgraphfull':
     seeder = ['db0zb']
-    servers = ['db0zb','db0hrf','db0hex','db0ins','db0wtl','db0taw','db0bi','db0rod','db0nhm','db0hbg']
+    servers = ['db0zb','db0bi','db0hrf','db0hex','db0hr','db0zka','db0ab','db0ins','db0ko','db0lb']
 elif edgelist == './hamnet100_renamed':
     seeder = ['db0zb']
-    #servers = ['db0zb','db0hex','db0ins','db0taw','db0hbg','db0vox','db0uc','db0eam','db0hhb','db0bio'] #10
-    #servers = ['db0zb']
-    servers = ['db0gth', 'db0wof', 'db0mw', 'db0mhb', 'db0vox', 'db0bul', 'db0wk', 'db0cgw', 'dl1flo1', 'db0son', 'db0rvb', 'db0ins', 'db0kvk', 'db0mio', 'db0cha', 'dm0avh', 'db0mak', 'db0hsr', 'db0mac', 'db0kt', 'dm0hr', 'df0ann', 'db0uhf', 'db0bl', 'db0zw', 'db0bwl', 'db0zm', 'db0bt', 'db0zb', 'db0slk', 'db0fue', 'db0eam', 'db0ein', 'db0hal', 'db0uc', 'dm0ea', 'db0ea', 'db0eb', 'db0hhb', 'db0ktb', 'db0ktn', 'db0nes', 'db0mpq', 'db0oha', 'dg7rz1', 'db0bbg', 'db0fhc', 'db0fha', 'db0fhn', 'db0ase', 'db0tan', 'db0for', 'db0war', 'db0bio', 'df0esa', 'dl9nbj1', 'db0nhm', 'db0hof', 'db0khh', 'db0hol', 'dl8new1', 'db0bam', 'db0hq', 'db0jgk', 'db0noe', 'db0bay', 'db0sbn', 'db0kat', 'db0sn', 'db0cj', 'db0hnk', 'db0hw', 'db0hbs', 'db0dri', 'db0hbg', 'db0gj', 'db0taw', 'db0adb', 'db0hrc', 'db0faa', 'db0hzs', 'db0eml', 'df0as', 'dl1nux', 'db0hex', 'db0shg', 'dm0et', 'db0nu', 'db0yq', 'db0feu', 'db0yz', 'db0rom', 'db0fc', 'dm0svx', 'db0abc', 'db0abb', 'db0ab', 'db0abz', 'db0cra', 'db0erf'] #100
+    #servers = ['db0zb'] #1
+    #servers = ['db0zb','db0hex'] #2
+    #servers = ['db0zb','db0hex','db0ins','db0taw','db0hbg'] #5
+    servers = ['db0zb','db0hex','db0ins','db0taw','db0hbg','db0vox','db0uc','db0eam','db0hhb','db0bio'] #10
+    #servers = ['db0gth', 'db0wof', 'db0mw', 'db0mhb', 'db0vox', 'db0bul', 'db0wk', 'db0cgw', 'dl1flo1', 'db0son', 'db0rvb', 'db0ins', 'db0kvk', 'db0mio', 'db0cha', 'dm0avh', 'db0mak', 'db0hsr', 'db0mac', 'db0kt', 'dm0hr', 'df0ann', 'db0uhf', 'db0bl', 'db0zw', 'db0bwl', 'db0zm', 'db0bt', 'db0zb', 'db0slk', 'db0fue', 'db0eam', 'db0ein', 'db0hal', 'db0uc', 'dm0ea', 'db0ea', 'db0eb', 'db0hhb', 'db0ktb', 'db0ktn', 'db0nes', 'db0mpq', 'db0oha', 'dg7rz1', 'db0bbg', 'db0fhc', 'db0fha', 'db0fhn', 'db0ase', 'db0tan', 'db0for', 'db0war', 'db0bio', 'df0esa', 'dl9nbj1', 'db0nhm', 'db0hof', 'db0khh', 'db0hol', 'dl8new1', 'db0bam', 'db0hq', 'db0jgk', 'db0noe', 'db0bay', 'db0sbn', 'db0kat', 'db0sn', 'db0cj', 'db0hnk', 'db0hw', 'db0hbs', 'db0dri', 'db0hbg', 'db0gj', 'db0taw', 'db0adb', 'db0hrc', 'db0faa', 'db0hzs', 'db0eml', 'df0as', 'dl1nux', 'db0hex', 'db0shg', 'dm0et', 'db0nu', 'db0yq', 'db0feu', 'db0yz', 'db0rom', 'db0fc', 'dm0svx', 'db0abc', 'db0abb', 'db0ab', 'db0abz', 'db0cra', 'db0erf'] #100
 else:
     seeder = ['db0uc']
     servers = ['db0uc','db0ktn']
-
+name = [] #db0son, db0zb, db0mio, db0drh, dl0new, db0nu, db0adb, db0bt, db0uc, dl1nux, db0ktn, db0rom, db0ren, db0taw, db0fhc
+ip = []
 FNULL = open(os.devnull, 'w')
 
 def useDownload():
@@ -69,26 +73,28 @@ def testIterations():
     else:
         return 'Merkwuerdiger Fehler'
 
-def measureTime(title, bo, Instance, Test, iteration):
+def measureTime(bo, Instance, Test, iteration):
     timeDelta = [[] for i in range(int(iteration))]
-    doc = open('./measurements/%s/%s/results/time_%s.txt' % (Instance,Test,title), 'w+')
+    doc = open('./measurements/%s/%s/results/time.txt' % (Instance,Test), 'w+')
 
     for node in name:
         if not node in seeder:
             for i in range(int(iteration)):
-            #for i in range(1,int(iteration)+1):
-                #print ('%s %s' % (node, i))
+                #print i
                 #with open('./measurements/%s/%s/%s/time/%s.txt' % (Instance, Test, int(iteration), node)) as input:
-                with open('./measurements/%s/%s/%s/time/%s.txt' % (Instance, Test, str(i+1), node)) as input:
-                    lines = input.readlines()
-                    time1 = lines[1]
-                    time2 = lines[-1]
-                    time1 = datetime.strptime(time1[:23], '%Y-%m-%d %H:%M:%S.%f') #2019-09-30 14:19:25.000
-                    time2 = datetime.strptime(time2[:23], '%Y-%m-%d %H:%M:%S.%f')
-                    tmp = time2 - time1
-                    tmp = tmp.total_seconds()
+                with open('./measurements/%s/%s/%s/time/%s_start.txt' % (Instance, Test, i, node)) as start:
+                    with open('./measurements/%s/%s/%s/time/%s_end.txt' % (Instance, Test, i, node)) as end:
+                        #print ('%s %s' %(node, i))
+                        lines1 = start.readlines()
+                        lines2 = end.readlines()
+                        #for line in lines:
+                        time1 = lines1[0]
+                        time2 = lines2[0]
+                        time1 = datetime.strptime(time1[:23], '%Y-%m-%dT%H:%M:%S.%f') #2019-09-30 14:19:25.000
+                        time2 = datetime.strptime(time2[:23], '%Y-%m-%dT%H:%M:%S.%f')
+                        tmp = time2 - time1
+                        tmp = tmp.total_seconds()
                 timeDelta[i].append(str(tmp))
-                print timeDelta
             if bo == True:
                 print node
                 print tmp
@@ -100,26 +106,23 @@ def measureTime(title, bo, Instance, Test, iteration):
         timeDelta[m].sort(key=float)
     for l in range(len(name)):
         for o in range(int(iteration)):
-            #print ('#%s #%s' % (o, l))
             doc.write('%s ' % str(timeDelta[o][l]))
         doc.write('\n')
-
-    #doc.write('%s, %s\n' % (node, str(timeDelta[name.index(node)])))
     doc.close()
     if bo == True:
         print (timeDelta)
 
-def measureTraffic(title, bo, Instance, Test, iteration):
+def measureTraffic(bo, Instance, Test, iteration):
     bytesIN = [[] for i in range(int(iteration))]
     bytesOUT = [[] for i in range(int(iteration))]
     #print timeDelta
-    docIN = open('./measurements/%s/%s/results/traffic_IN_%s.txt' % (Instance,Test,title), 'w+')
-    docOUT = open('./measurements/%s/%s/results/traffic_OUT_%s.txt' % (Instance,Test,title), 'w+')
+    docIN = open('./measurements/%s/%s/results/traffic_IN.txt' % (Instance,Test), 'w+')
+    docOUT = open('./measurements/%s/%s/results/traffic_OUT.txt' % (Instance,Test), 'w+')
 
-    for i in range(1 , int(iteration) + 1):
+    for i in range(int(iteration)):
         for node in name:
-            bytesIN[i-1].append(0)
-            bytesOUT[i-1].append(0)
+            bytesIN[i].append(0)
+            bytesOUT[i].append(0)
             with open('measurements/%s/%s/%s/traffic/%s_IN.txt' % (Instance, Test, i, node)) as inputIN:
                 with open('measurements/%s/%s/%s/traffic/%s_OUT.txt' % (Instance, Test, i, node)) as inputOUT:
                     linesIN = inputIN.readlines()
@@ -131,13 +134,13 @@ def measureTraffic(title, bo, Instance, Test, iteration):
                             #print j
                             tmp = linesIN[j].split() # tmp[1] = bytes
                             #print tmp
-                            bytesIN[i-1][name.index(node)] = bytesIN[i-1][name.index(node)] + int(tmp[1])
+                            bytesIN[i][name.index(node)] = bytesIN[i][name.index(node)] + int(tmp[1])
                             #print bytesIN[i-1][name.index(node)]
-                    if len(linesIN) > 2:
+                    if len(linesOUT) > 2:
                         for k in range(2,len(linesOUT)):
                             #print k
                             tmp = linesOUT[k].split() # tmp[1] = bytes
-                            bytesOUT[i-1][name.index(node)] = bytesOUT[i-1][name.index(node)] + int(tmp[1])
+                            bytesOUT[i][name.index(node)] = bytesOUT[i][name.index(node)] + int(tmp[1])
 
     for m in range(int(iteration)):
         bytesIN[m].sort(key=float)
@@ -182,6 +185,26 @@ def findInterfaces():
                 doc.write(interfaces[i])
         doc.close
 
+def interfaceIp():
+    for node in name:
+        subprocess.call(["docker exec mn.%s sh -c 'ifconfig > interfaces.txt'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        subprocess.call(["docker cp mn.%s:interfaces.txt ./tmp.txt'" % node],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
+        interfaceIps = []
+        doc = open('./interfaces/%s_ip.txt' % node, 'w+')
+        with open('./interfaces/%s.txt' % node) as inputName:
+            with open('tmp.txt') as inputIp:
+                linesName = inputName.readlines()
+                linesIp = inputIp.readlines()
+                for lineName in linesName:
+                    for lineIp in linesIp:
+                        if lineName in lineIp:
+                            tmp = linesIp[linesIp.index(lineIp) + 1]
+                            interfaceIps.append(tmp[tmp.find('inet addr:'):tmp.find('  Bcast')])
+                            doc.write(tmp[tmp.find('inet addr:'):tmp.find('  Bcast')] + '\n')
+                            print tmp
+                            print interfaceIps
+        doc.close()
+
 def serverList():
     #readNodes()
     global serverString_1
@@ -195,37 +218,24 @@ def serverList():
         serverString_2 = serverString_2 + '"%s:8002",' % (ip[name.index(node)])
 
 def dfdaemon(host_ip):
-    #serverList()
+    serverList()
     #print serverString_1
     #print serverString_2
     doc = open('dfdaemon.yml', 'w+')
-    doc.write('supernodes:\n%s\n' % (serverString_1))
-    # fuer private registry
-    '''
-    doc.write('proxies:\n- regx: blobs/sha256.*\n')
-    doc.write('hijack_https:\n  cert: df.crt\n  key: df.key\n  hosts:\n')
-    for node in seeder:
-        doc.write('  - regx: %s\n    insecure: true\n' % (ip[name.index(node)]))
-    '''
-    # --notbs funktioniert nicht in dfdaemon.yml
-    '''
-    doc.write('dfget_flags: ["--notbs","--node",%s"--verbose","--ip","%s","port","--expiretime","3m0s","--alivetime","5m0s"]' % (serverString_2, host_ip))
-    #if not name[ip.index(host_ip)] in seeder:
-        #doc.write('dfget_flags: ["--notbs","--node",%s"--verbose","--ip","%s","--port","15001"]\n' % (serverString_2, host_ip))
-        #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s"]\n\nsupernodes:\n%s' % (serverString_2, host_ip, serverString_1))
-        #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s","--notbs"]\n\nsupernodes:\n%s' % (serverString_2, host_ip, serverString_1))
-    #else:
-        #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s","--port","15001"]\n' % (serverString_2, host_ip))
-        #doc.write('supernodes:\n%s\n' % (serverString_1))
-        #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s"]\n\nsupernodes:\n%s' % (serverString_2, host_ip, serverString_1))
-        #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s","--notbs"]\n\nsupernodes:\n%s' % (serverString_2, host_ip, serverString_1))
-    #doc.write('dfget_flags: ["--node",%s"--verbose","--ip","%s","port","15001","--expiretime","3m0s","--alivetime","5m0s","-f","filterParam1&filterParam2"]' % (serverString2,host_ip))
-    '''
+    #doc.write('dfget_flags: ["--notbs","--verbose"]\n\nsupernodes:\n%s' % (serverString_1))
+    #doc.write('dfget_flags: ["--notbs","--verbose", "--ip", "44.0.0.0/31","--expiretime", "60m0s", "--alivetime", "60m0s"]\n\nsupernodes:\n%s' % (serverString_1))
+    if host_ip in seeder:
+        doc.write('dfget_flags: ["--verbose", "--ip", "%s","--expiretime", "60m0s", "--alivetime", "60m0s"]\n\nsupernodes:\n%s' % (host_ip,serverString_1))
+    else:
+        doc.write('dfget_flags: ["--notbs","--verbose", "--ip", "%s","--expiretime", "60m0s", "--alivetime", "60m0s"]\n\nsupernodes:\n%s' % (host_ip,serverString_1))
+    #doc.write('dfget_flags: ["--notbs","--verbose", "--ip", "127.0.0.1","--expiretime", "60m0s", "--alivetime", "60m0s"]\n\nsupernodes:\n%s' % (serverString_1))
     doc.close()
 
 def supernode(host_ip):
     doc = open('supernode.yml', 'w+')
-    doc.write('base:\n  advertiseIP: %s\n\n  peerUpLimit: 1000\n\n  peerDownLimit: 1000\n\n  eliminationLimit: 1000\n\n  failureCountLimit: 1000' % (host_ip))
+    #doc.write('base:\n  advertiseIP: %s' % (host_ip))
+    doc.write('base:\n  advertiseIP: %s\n\n  eliminationLimit: 1000000\n\n  failureCountLimit: 1000000' % (host_ip))
+    #doc.write('base:\n  advertiseIP: %s\n\n  peerUpLimit: 1000\n\n  peerDownLimit: 1000\n\n  eliminationLimit: 1000\n\n  failureCountLimit: 1000' % (host_ip))
     doc.close()
 
 def readNodes():
@@ -256,12 +266,12 @@ def readNodes():
 
 def checkNetwork():
     sum = 0
-    for node in set.name:
-        if 'mn.'+ set.name in subprocess.check_output(['docker ps'],shell=True):
+    for node in name:
+        if 'mn.'+ name in subprocess.check_output(['docker ps'],shell=True):
             sum = sum + 1
         else:
             print (node + ' is missing in network')
-    if sum < len(set.name):
+    if sum < len(name):
         print ('Network is not running correctly')
         exit()
     else:
@@ -290,39 +300,8 @@ def restartExited(): #restart stopped container
             subprocess.call(["docker restart %s" % tmp[-1] ],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
             print ('%s was restarted' % tmp[-1])
 
-#global name
-#name = [] #db0son, db0zb, db0mio, db0drh, dl0new, db0nu, db0adb, db0bt, db0uc, dl1nux, db0ktn, db0rom, db0ren, db0taw, db0fhc
-#global ip #db0son, db0zb, db0mio, db0drh, dl0new, db0nu, db0adb, db0bt, db0uc, dl1nux, db0ktn, db0rom, db0ren, db0taw, db0fhc
-#ip = []
-readNodes()
-#global serverString_1 #db0son, db0zb, db0mio, db0drh, dl0new, db0nu, db0adb, db0bt, db0uc, dl1nux, db0ktn, db0rom, db0ren, db0taw, db0fhc
-#serverString_1 = ''
-#global serverString_2 #db0son, db0zb, db0mio, db0drh, dl0new, db0nu, db0adb, db0bt, db0uc, dl1nux, db0ktn, db0rom, db0ren, db0taw, db0fhc
-#serverString_2 = ''
-serverList()
-
-#readNodes()
-#serverString_1 = ''
-#serverString_2 = ''
-#for node in servers:
-    #serverString_1 = serverString_1 + '    - %s\n' % (ip[name.index(node)])
-    #serverString_2 = serverString_2 + '"%s",' % (ip[name.index(node)])
-#print serverString_1
-#print serverString_2
-
 def __init__():
     #readNodes()
-    '''
-    serverString_1 = ''
-    serverString_2 = ''
-    for node in servers:
-        serverString_1 = serverString_1 + '    - %s\n' % (ip[name.index(node)])
-        serverString_2 = serverString_2 + '"%s",' % (ip[name.index(node)])
-    print serverString_1
-    print serverString_2
-    '''
-    #return serverString_1
-    #return serverString_2
-    #serverList()
+
     checkNetwork()
     currentInstance = datetime.strftime(datetime.now(),'%Y%m%d%H%M')

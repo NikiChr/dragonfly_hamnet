@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # hamnetFromGraph.py
+
 import networkx as nx
 import matplotlib.pyplot as plt
 import sys
@@ -62,10 +63,10 @@ def graph2Network(G, net):
         if1 = (u+'-'+v)[-15:]
         if2 = (v+'-'+u)[-15:]
 
-        #try:
-        net.addLink(net.get(u), net.get(v), intfName1=if1, intfName2=if2)
-        #except:
-            #print("Unexpected error:", sys.exc_info()[0], u, v, c)
+        try:
+            net.addLink(net.get(u), net.get(v), intfName1=if1, intfName2=if2)
+        except:
+            print("Unexpected error:", sys.exc_info()[0], u, v, c)
 
         if not left_ip_isset:
             print("set on host %s interface %s" % (u, if1))
@@ -74,9 +75,7 @@ def graph2Network(G, net):
             print("set on host %s interface %s" % (v, if2))
             net.get(v).setIP(socket.inet_ntoa(struct.pack('!I',right_ip)), prefixLen=31, intf=if2)
     #print (nodeList)
-    return
-
-
+	time.sleep(1)
 
 def limitLinks(G, net, routing):
     for (u, v, c) in G.edges.data():
@@ -87,6 +86,7 @@ def limitLinks(G, net, routing):
 
         hostU.cmd('tc qdisc add dev %s root netem delay 1.940ms 8.515ms distribution pareto rate 4096kbit slot 0.683ms 0.683ms packets 1' % interfaceNameUV)
         hostV.cmd('tc qdisc add dev %s root netem delay 1.940ms 8.515ms distribution pareto rate 4096kbit slot 0.682ms 0.683ms packets 1' % interfaceNameVU)
+
 
 def restartLinks(G, net):
     for (u, v, c) in G.edges.data():
@@ -153,23 +153,14 @@ doc.write(currentInstance)
 doc.close()
 
 config = open('dfget.yml', 'w+')
-config.write('minRate: 327680\n') #Verlaengern der Timeout Zeit def 20480
+#config.write('minRate: 327680\n') #Verlaengern der Timeout Zeit def 20480
+#config.write('minRate: 512\n') #Verlaengern der Timeout Zeit def 20480
 config.write('nodes:\n') #Liste mit Supernodes fuer dfget
 for node in G.nodes():
     if net.get(node).name in set.servers:
         config.write('- ' + net.get(node).IP() + ':8002\n')
 config.close()
-'''
-config = open('dfdaemon.yml', 'w+')
-config.write('supernodes:\n') #Liste mit Supernodes fuer dfget
-nodelist = ''
-for node in G.nodes():
-    if net.get(node).name in set.servers:
-        config.write('- ' + net.get(node).IP() + ':8002\n')
-        nodelist = nodelist + '"%s",' % net.get(node).IP()
-    config.write('dfget_flags:"--node",%s' % (nodelist))
-config.close()
-'''
+
 containerInfo()
 set.readNodes()
 set.serverList()
@@ -185,6 +176,7 @@ print("Check for faulty containers")
 check.check()
 
 set.findInterfaces()
+set.interfaceIp()
 set.setupIptables()
 set.restartExited()
 

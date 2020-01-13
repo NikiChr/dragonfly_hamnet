@@ -9,9 +9,13 @@ import os
 import subprocess
 import settings as set
 
+global repeat
+repeat = False
+
 def check():
-    #print 'check läuft'
-    set.readNodes()
+    global repeat
+    repeat = False
+    overallCheck = True
     sumB = 0
     babeld = []
     sumD = 0
@@ -42,13 +46,15 @@ def check():
                 else:
                     checkS = True
         if checkB == False:
+            overallCheck = False
             babeld.append(node)
             sumB = sumB + 1
         if checkD == False:
-            if node in babeld:
-                dfclient.append(node)
+            overallCheck = False
+            dfclient.append(node)
             sumD = sumD + 1
         if checkS == False:
+            overallCheck = False
             supernode.append(node)
             sumS = sumS + 1
 
@@ -72,3 +78,8 @@ def check():
     for node in supernode:
         if not node in (babeld or dfclient):
             subprocess.call(["docker exec mn.%s sh -c 'export IP=%s && docker-compose -f stack_server.yml up -d'" % (node, set.ip[set.name.index(node)])],shell=True)
+
+    if overallCheck == True:
+        repeat = False
+    else:
+        repeat = True
