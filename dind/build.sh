@@ -25,5 +25,3 @@ docker stop dragonfly_build
 docker commit dragonfly_build dragonfly_dind
 docker rm dragonfly_build
 echo '***Image dragonfly_dind erstellt!'
-
-#docker build -t kraken_dind .
