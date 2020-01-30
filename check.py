@@ -62,8 +62,6 @@ def check():
     print ('%s container(s) not running dfclient: %s' % (str(sumD),dfclient))
     print ('%s container(s) not running supernode: %s' % (str(sumS),supernode))
 
-    #print ('%s babeld container not running correctly\n%s dfclient container not running correctly\n%s supernode container not running correctly' % (str(sumB), str(sumD), str(sumS)))
-
     for node in babeld:
         if node in set.servers:
             subprocess.call(["docker exec mn.%s sh -c 'export IP=%s && docker-compose -f stack_server.yml up -d'" % (node, set.ip[set.name.index(node)])],shell=True)

@@ -3,3 +3,12 @@ interfaces/
 dfget.yml
 dfdaemon.yml
 supernode.yml
+infoIP.txt
+infoName.txt
+*.pyc
+hamnet*
+test*
+tmp*
+*.save
+dfaemon.yml
+dfget.yml

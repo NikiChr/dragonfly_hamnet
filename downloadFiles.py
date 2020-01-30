@@ -14,7 +14,6 @@ import settings as set
 import check
 
 FNULL = open(os.devnull, 'w')
-#set.readNodes()
 
 def checkDragonflyContainer():
     sum = 0
@@ -45,7 +44,6 @@ def checkDragonflyContainer():
                     sum = sum + 1
                     dfclient[set.name.index(node)] = True
                     bar2.next()
-                    #print ('\n' + node)
                 else:
                     sum = sum + 1
     if False in dfclient:
@@ -74,8 +72,7 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
         subprocess.call(['mkdir measurements/%s/%s/%s/time/' % (currentInstance,currentTest,i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
         subprocess.call(['mkdir measurements/%s/%s/%s/traffic/' % (currentInstance,currentTest,i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-        ##########################
-        #deleting and Restarting
+        #deleting and restarting
         deleted = [False] * len(set.name)
         restarted = [False] * len(set.name)
         sum = 0
@@ -136,12 +133,10 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
         check.check()
         while check.repeat == True:
             check.check()
-        #time.sleep(60)
         bar_restart.finish()
 
         #prepare seeder
         print ('Preparing seeder(s)')
-        #time.sleep(240)
         for node in set.seeder:
             subprocess.call(['docker exec mn.%s docker pull %s' % (node, image)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
             subprocess.call(['docker exec -it mn.%s sh -c "iptables -Z"' % (node)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
@@ -155,7 +150,6 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
         bar_download = IncrementalBar('Waiting for download(s)', max = len(set.name))
         for node in set.name:
             if not node in set.seeder:
-                #time.sleep(0.1)
                 subprocess.call(['docker exec mn.%s sh -c "(date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_start.txt && docker pull %s && date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_end.txt)"&' % (node, node, i, image, node, i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
             else:
                 complete[set.name.index(node)] = True
@@ -163,7 +157,7 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
                 sum = sum + 1
                 iPrev = datetime.now()
 
-        #Server outage
+        #server outage
         if outage == True:
             print ('\nWaiting %s seconds for outage...' % oTime)
             time.sleep(int(oTime))
@@ -171,20 +165,19 @@ def downloadImage(image, iteration, outage = False, oNr = 0, oTime = 0):
                 print set.servers[j]
                 subprocess.call(['docker exec mn.%s docker stop supernode &' % (set.servers[-j])],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
-
         #check download
         while sum < len(set.name):
             for node in set.name:
                 if complete[set.name.index(node)] == False:
                     if image in subprocess.check_output(['docker exec mn.%s docker image ls' % node],shell=True):
-                        print ('Docker pull successful for mn.%s' % node)
+                        #print ('Docker pull successful for mn.%s' % node) #remove first comment for info on successful pull
                         sum = sum + 1
                         complete[set.name.index(node)] = True
                         bar_download.next()
                     else:
                         if not image in subprocess.check_output(['docker exec mn.%s sh -c "ps -a"' % node],shell=True):
                             subprocess.call(['docker exec mn.%s sh -c "(docker pull %s && date +"%%Y-%%m-%%dT%%T.%%6N" > times/%s_%s_end.txt)"&' % (node, image, node, i)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-                            print ('Docker pull restarted for mn.%s' % node)
+                            #print ('Docker pull restarted for mn.%s' % node) #remove first comment for info on failed pull
             time.sleep(1)
         bar_download.finish()
         print 'Download(s) successful'
@@ -209,12 +202,6 @@ set.readNodes()
 currentTest = datetime.strftime(datetime.now(),'%Y%m%d%H%M')
 subprocess.call(['mkdir measurements/%s/%s/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 subprocess.call(['mkdir measurements/%s/%s/results/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# subprocess.call(['mkdir measurements/%s/%s/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# subprocess.call(['mkdir measurements/%s/%s/results/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# #subprocess.call(['mkdir measurements/%s/%s/results/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# subprocess.call(['mkdir measurements/%s/%s/0/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# subprocess.call(['mkdir measurements/%s/%s/0/time/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
-# subprocess.call(['mkdir measurements/%s/%s/torrents/' % (currentInstance, currentTest)],stdout=FNULL, stderr=subprocess.STDOUT,shell=True)
 
 testImage = raw_input("Please enter image: ")
 serverOutage = set.chooseBoolean()
@@ -229,7 +216,3 @@ if serverOutage == True:
 downloadImage(testImage, set.testIterations(), serverOutage, outageNr, outageTime)
 
 print ('Output in: measurements/%s/%s/' % (currentInstance, currentTest))
-
-#os.path.getctime(path)
-#print set.name
-#print ip

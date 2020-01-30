@@ -35,14 +35,5 @@ services:
         restart: unless-stopped
         command: --download-port=8001
 
-    # backend:
-    #     image: 172.17.0.1:5000/registry
-    #     container_name: registry
-    #     privileged: true
-    #     network_mode: "host"
-    #     restart: unless-stopped
-    #     ports:
-    #         - 5001:5000
-
 volumes:
     dbdata:

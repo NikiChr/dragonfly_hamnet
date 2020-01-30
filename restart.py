@@ -13,9 +13,3 @@ while True:
     time.sleep(5)
     set.restartExited()
     spinner.next()
-
-
-
-#set.measureTime('golang',True,'201910181448','201910182258',2,53)
-
-#print ("%s ist %s sehr %s" % ('Das %s Feature','wirklich','cool')
